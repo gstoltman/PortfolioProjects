@@ -36,10 +36,11 @@ Order by InfectedPercentage DESC
 
 --Countries with the highest death count
 
-Select continent, Location, MAX(CAST(total_deaths as int)) as TotalDeathCount
+Select Location, SUM(CAST(new_deaths as int)) as TotalDeathCount
 From PortfolioProject1..CovidDeaths
-WHERE continent is not null
-GROUP BY continent, Location
+WHERE continent is null
+and location not in ('World', 'European Union', 'International', 'Upper middle income', 'Lower middle income', 'High income', 'Low income')
+GROUP BY Location
 ORDER BY TotalDeathCount DESC
 
 --Continents with the highest death count
@@ -127,3 +128,56 @@ JOIN PortfolioProject1..CovidVaccinations vac
     ON dea.location = vac.location
     AND dea.date = vac.date
 Where dea.continent is not null
+
+--For visualization, views 1 - 4
+--1.
+
+Create View TotalGlobalStats as 
+Select SUM(new_cases) as GlobalCases, SUM(CAST(new_deaths as int)) as GlobalDeaths, SUM(CAST(new_deaths as int))/SUM(new_cases)*100 as DeathPercentage
+From PortfolioProject1..CovidDeaths
+WHERE continent is not null
+
+SELECT * FROM dbo.TotalGlobalStats
+
+--2.
+
+Create View TotalDeathCount as
+Select Location, SUM(CAST(new_deaths as int)) as TotalDeathCount
+From PortfolioProject1..CovidDeaths
+WHERE continent is null
+and location not in ('World', 'European Union', 'International', 'Upper middle income', 'Lower middle income', 'High income', 'Low income')
+Group by location
+
+SELECT * FROM dbo.TotalDeathCount
+
+--3.
+
+Create View PercentInfected as
+Select Location, population, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as InfectedPercentage
+From PortfolioProject1..CovidDeaths
+WHERE location not in ('World', 'European Union', 'International', 'Upper middle income', 'Lower middle income', 'High income', 'Low income')
+GROUP BY Location, population
+
+SELECT * FROM dbo.PercentInfected
+
+
+--4.
+
+Create View PercentInfectedTimeline as 
+Select Location, population, date, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as InfectedPercentageDate
+From PortfolioProject1..CovidDeaths
+WHERE location not in ('World', 'European Union', 'International', 'Upper middle income', 'Lower middle income', 'High income', 'Low income', 'Africa', 'Asia', 'Europe', 'Oceania', 'North America', 'South America')
+GROUP BY location, population, date
+
+SELECT * FROM dbo.PercentInfectedTimeline
+
+--5
+
+Create View TotalDeathCountCountry as
+Select Location, population, SUM(CAST(new_deaths as int)) as TotalDeathCountCountry
+From PortfolioProject1..CovidDeaths
+WHERE continent is not null
+and location not in ('World', 'European Union', 'International', 'Upper middle income', 'Lower middle income', 'High income', 'Low income')
+Group by location, population
+
+SELECT * FROM dbo.TotalDeathCountCountry
